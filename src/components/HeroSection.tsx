@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 const HeroSection = () => {
   return (
@@ -30,27 +30,16 @@ const HeroSection = () => {
           </p>
 
           {/* Video Player */}
-          <div className="relative max-w-3xl mx-auto mb-10 animate-fade-up" style={{ animationDelay: "0.3s" }}>
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-border/50 bg-foreground/5 aspect-video">
-              {/* Video Placeholder - Replace with actual YouTube embed */}
-              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/90 to-primary">
-                <div className="text-center">
-                  <div className="w-20 h-20 rounded-full bg-accent/20 backdrop-blur-sm flex items-center justify-center mx-auto mb-4 cursor-pointer hover:bg-accent/30 transition-colors">
-                    <Play className="w-8 h-8 text-accent fill-accent" />
-                  </div>
-                  <p className="text-primary-foreground/70 text-sm">Product Demo Video</p>
-                </div>
-              </div>
-              {/* Uncomment and add your YouTube video ID when ready:
+          <div className="relative max-w-md mx-auto mb-10 animate-fade-up" style={{ animationDelay: "0.3s" }}>
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-border/50 bg-foreground/5 aspect-[9/16]">
               <iframe
                 className="w-full h-full"
-                src="https://www.youtube.com/embed/YOUR_VIDEO_ID?autoplay=1&mute=1&loop=1&playlist=YOUR_VIDEO_ID&controls=0&modestbranding=1&rel=0&showinfo=0"
+                src="https://www.youtube.com/embed/pDDqXoEwt5M?autoplay=1&mute=1&loop=1&playlist=pDDqXoEwt5M&controls=0&modestbranding=1&rel=0&showinfo=0&playsinline=1"
                 title="CartGPT Demo"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
-              */}
             </div>
             
             {/* Glow Effect */}
