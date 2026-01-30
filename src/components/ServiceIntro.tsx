@@ -1,8 +1,35 @@
+import { useRef, useEffect } from "react";
 import { MessageCircle, Search, Target } from "lucide-react";
+import { trackEvent, EVENTS } from "@/lib/analytics";
 
 const ServiceIntro = () => {
+  const sectionRef = useRef<HTMLElement>(null);
+  const tracked = useRef(false);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section || tracked.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !tracked.current) {
+            tracked.current = true;
+            trackEvent(EVENTS.EXPLANATION);
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(section);
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <section id="features" className="py-24 relative overflow-hidden">
+    <section ref={sectionRef} id="features" className="py-24 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-secondary/30 to-background" />
 
       <div className="container mx-auto px-6 relative z-10">
