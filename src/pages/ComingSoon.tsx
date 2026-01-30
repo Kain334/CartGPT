@@ -6,6 +6,7 @@ import { ArrowLeft, Check } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { trackEvent, EVENTS } from "@/lib/analytics";
 
 const ComingSoon = () => {
   const [email, setEmail] = useState("");
@@ -43,6 +44,8 @@ const ComingSoon = () => {
       return;
     }
     
+    // Track successful waitlist signup
+    trackEvent(EVENTS.WAITING_LIST);
     setIsSubmitted(true);
   };
 

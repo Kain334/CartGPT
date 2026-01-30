@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      user_events: {
+        Row: {
+          created_at: string
+          event_date: string
+          event_name: string
+          guest_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          event_date?: string
+          event_name: string
+          guest_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          event_date?: string
+          event_name?: string
+          guest_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
       waitlist_signups: {
         Row: {
           created_at: string

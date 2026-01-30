@@ -1,4 +1,6 @@
+import { useRef, useEffect } from "react";
 import { Star, Quote } from "lucide-react";
+import { trackEvent, EVENTS } from "@/lib/analytics";
 
 const reviews = [
   {
@@ -28,8 +30,33 @@ const reviews = [
 ];
 
 const Reviews = () => {
+  const sectionRef = useRef<HTMLElement>(null);
+  const tracked = useRef(false);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section || tracked.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !tracked.current) {
+            tracked.current = true;
+            trackEvent(EVENTS.REVIEWS);
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(section);
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <section id="reviews" className="py-24 relative overflow-hidden">
+    <section ref={sectionRef} id="reviews" className="py-24 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-background via-secondary/20 to-background" />
       
       <div className="container mx-auto px-6 relative z-10">

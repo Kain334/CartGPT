@@ -1,8 +1,39 @@
+import { useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { trackEvent, EVENTS } from "@/lib/analytics";
 
 const HeroSection = () => {
+  const videoRef = useRef<HTMLDivElement>(null);
+  const videoTracked = useRef(false);
+
+  useEffect(() => {
+    const videoElement = videoRef.current;
+    if (!videoElement || videoTracked.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !videoTracked.current) {
+            videoTracked.current = true;
+            trackEvent(EVENTS.VIDEO);
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.7 }
+    );
+
+    observer.observe(videoElement);
+
+    return () => observer.disconnect();
+  }, []);
+
+  const handleButtonClick = () => {
+    trackEvent(EVENTS.BUTTON);
+  };
+
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-20 pb-16 overflow-hidden">
       {/* Background Elements */}
@@ -31,7 +62,7 @@ const HeroSection = () => {
           </p>
 
           {/* Video Player */}
-          <div className="relative max-w-md mx-auto mb-10 animate-fade-up" style={{ animationDelay: "0.3s" }}>
+          <div ref={videoRef} className="relative max-w-md mx-auto mb-10 animate-fade-up" style={{ animationDelay: "0.3s" }}>
             <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-border/50 bg-foreground/5 aspect-[9/16]">
               <iframe
                 className="w-full h-full"
@@ -49,7 +80,7 @@ const HeroSection = () => {
 
           {/* CTA Button */}
           <div className="animate-fade-up" style={{ animationDelay: "0.4s" }}>
-            <Button variant="cta" size="xl" className="group" asChild>
+            <Button variant="cta" size="xl" className="group" asChild onClick={handleButtonClick}>
               <Link to="/coming-soon">
                 Try CartGPT for Free Now
                 <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
