@@ -4,20 +4,45 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Check } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const ComingSoon = () => {
   const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
     
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    
+    const { error } = await supabase
+      .from("waitlist_signups")
+      .insert({ email: email.trim().toLowerCase() });
+    
     setIsLoading(false);
+    
+    if (error) {
+      if (error.code === "23505") {
+        // Unique constraint violation - email already exists
+        toast({
+          title: "Already on the list!",
+          description: "This email is already registered for early access.",
+        });
+        setIsSubmitted(true);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Something went wrong",
+          description: "Please try again later.",
+        });
+      }
+      return;
+    }
+    
     setIsSubmitted(true);
   };
 
