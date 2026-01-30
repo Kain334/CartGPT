@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 
@@ -48,9 +49,11 @@ const HeroSection = () => {
 
           {/* CTA Button */}
           <div className="animate-fade-up" style={{ animationDelay: "0.4s" }}>
-            <Button variant="cta" size="xl" className="group">
-              Try CartGPT for Free Now
-              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+            <Button variant="cta" size="xl" className="group" asChild>
+              <Link to="/coming-soon">
+                Try CartGPT for Free Now
+                <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+              </Link>
             </Button>
             <p className="text-sm text-muted-foreground mt-4">
               No credit card required • Start in 30 seconds
