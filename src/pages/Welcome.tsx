@@ -1,7 +1,7 @@
 import LandingTemplate from "@/components/LandingTemplate";
 
-const Index = () => {
+const Welcome = () => {
   return <LandingTemplate />;
 };
 
-export default Index;
+export default Welcome;
