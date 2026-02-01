@@ -1,54 +1,8 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ArrowLeft } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Check, ArrowLeft } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { trackEvent, EVENTS } from "@/lib/analytics";
 
-const ComingSoon = () => {
-  const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-  const navigate = useNavigate();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-    
-    setIsLoading(true);
-    
-    const { error } = await supabase
-      .from("waitlist_signups")
-      .insert({ email: email.trim().toLowerCase() });
-    
-    setIsLoading(false);
-    
-    if (error) {
-      if (error.code === "23505") {
-        // Unique constraint violation - email already exists
-        toast({
-          title: "Already on the list!",
-          description: "This email is already registered for early access.",
-        });
-        navigate("/submitted");
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Something went wrong",
-          description: "Please try again later.",
-        });
-      }
-      return;
-    }
-    
-    // Track successful waitlist signup
-    trackEvent(EVENTS.WAITING_LIST);
-    navigate("/submitted");
-  };
-
+const WaitlistSubmitted = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center relative overflow-hidden animate-fade-in">
       {/* Background Elements */}
@@ -76,28 +30,16 @@ const ComingSoon = () => {
             Join the waitlist to get your invite and exclusive early-access perks.
           </p>
 
-          {/* Lead Capture Form */}
-          <form onSubmit={handleSubmit} className="max-w-md mx-auto mb-10">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Input
-                type="email"
-                placeholder="Enter your email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="h-14 px-5 text-base bg-card border-border/50 focus:border-accent"
-              />
-              <Button 
-                type="submit" 
-                variant="cta" 
-                size="xl"
-                disabled={isLoading}
-                className="whitespace-nowrap"
-              >
-                {isLoading ? "Joining..." : "Join the Waitlist"}
-              </Button>
+          {/* Success State */}
+          <div className="max-w-md mx-auto mb-10 p-6 rounded-2xl bg-accent/10 border border-accent/20 animate-scale-in">
+            <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-4">
+              <Check className="w-6 h-6 text-accent" />
             </div>
-          </form>
+            <h3 className="text-xl font-semibold text-foreground mb-2">You're in!</h3>
+            <p className="text-muted-foreground">
+              We've sent a confirmation to your email. Check your inbox soon.
+            </p>
+          </div>
 
           {/* Social Proof */}
           <div className="flex flex-col items-center gap-4 mb-12">
@@ -131,4 +73,4 @@ const ComingSoon = () => {
   );
 };
 
-export default ComingSoon;
+export default WaitlistSubmitted;
