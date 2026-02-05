@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Calendar as CalendarIcon } from "lucide-react";
 import { 
   BarChart3, 
   Users, 
@@ -21,10 +22,14 @@ import {
 } from "lucide-react";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, FunnelChart, Funnel, LabelList, Cell } from "recharts";
-import { format } from "date-fns";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { format, subDays, startOfDay } from "date-fns";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { DateRange } from "react-day-picker";
+import { cn } from "@/lib/utils";
 
-type TimeFilter = "daily" | "7days" | "30days";
+type TimeFilter = "daily" | "7days" | "30days" | "custom";
 
 interface EventCount {
   event_name: string;
@@ -43,6 +48,10 @@ const AdminAnalytics = () => {
   const { isAuthenticated, logout } = useAdminAuth();
   const navigate = useNavigate();
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("daily");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: subDays(new Date(), 7),
+    to: new Date(),
+  });
   const [waitlistCount, setWaitlistCount] = useState(0);
   const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntry[]>([]);
   const [eventCounts, setEventCounts] = useState<EventCount[]>([]);
@@ -59,30 +68,44 @@ const AdminAnalytics = () => {
     if (isAuthenticated) {
       fetchAnalytics();
     }
-  }, [isAuthenticated, timeFilter]);
+  }, [isAuthenticated, timeFilter, dateRange]);
 
-  const getDateFilter = () => {
+  const getDateFilter = (): { start: string; end: string } => {
     const now = new Date();
     switch (timeFilter) {
       case "daily":
-        return new Date(now.setHours(0, 0, 0, 0)).toISOString();
+        return {
+          start: startOfDay(now).toISOString(),
+          end: now.toISOString(),
+        };
       case "7days":
-        return new Date(now.setDate(now.getDate() - 7)).toISOString();
+        return {
+          start: startOfDay(subDays(now, 7)).toISOString(),
+          end: now.toISOString(),
+        };
       case "30days":
-        return new Date(now.setDate(now.getDate() - 30)).toISOString();
+        return {
+          start: startOfDay(subDays(now, 30)).toISOString(),
+          end: now.toISOString(),
+        };
+      case "custom":
+        return {
+          start: dateRange?.from ? startOfDay(dateRange.from).toISOString() : startOfDay(subDays(now, 7)).toISOString(),
+          end: dateRange?.to ? new Date(dateRange.to.setHours(23, 59, 59, 999)).toISOString() : now.toISOString(),
+        };
     }
   };
 
   const fetchAnalytics = async () => {
     setIsLoading(true);
-    const dateFilter = getDateFilter();
+    const { start, end } = getDateFilter();
 
     try {
       // Fetch waitlist count for today
       const { count: todayWaitlistCount } = await supabase
         .from("waitlist_signups")
         .select("*", { count: "exact", head: true })
-        .gte("created_at", new Date(new Date().setHours(0, 0, 0, 0)).toISOString());
+        .gte("created_at", startOfDay(new Date()).toISOString());
       
       setWaitlistCount(todayWaitlistCount || 0);
 
@@ -90,7 +113,8 @@ const AdminAnalytics = () => {
       const { data: waitlistData } = await supabase
         .from("waitlist_signups")
         .select("*")
-        .gte("created_at", dateFilter)
+        .gte("created_at", start)
+        .lte("created_at", end)
         .order("created_at", { ascending: false });
       
       setWaitlistEntries(waitlistData || []);
@@ -99,7 +123,8 @@ const AdminAnalytics = () => {
       const { data: eventsData } = await supabase
         .from("user_events")
         .select("event_name")
-        .gte("created_at", dateFilter);
+        .gte("created_at", start)
+        .lte("created_at", end);
 
       if (eventsData) {
         const counts = eventsData.reduce((acc: Record<string, number>, event) => {
@@ -118,7 +143,8 @@ const AdminAnalytics = () => {
         const { data: uniqueGuests } = await supabase
           .from("user_events")
           .select("guest_id")
-          .gte("created_at", dateFilter);
+          .gte("created_at", start)
+          .lte("created_at", end);
 
         const uniqueGuestIds = new Set(uniqueGuests?.map((e) => e.guest_id));
         setDauCount(uniqueGuestIds.size);
@@ -143,9 +169,11 @@ const AdminAnalytics = () => {
   ];
 
   // Funnel B: Conversion Flow
+  // Note: DAU counts unique visitors, while Landing Page counts total page views per day
+  // A returning user visiting on multiple days = 1 DAU but multiple landing page events
   const funnelBData = [
-    { name: "DAU", value: dauCount, fill: FUNNEL_COLORS[0] },
-    { name: "Landing Page", value: getEventCount("landing page"), fill: FUNNEL_COLORS[1] },
+    { name: "Unique Visitors", value: dauCount, fill: FUNNEL_COLORS[0] },
+    { name: "Page Views", value: getEventCount("landing page"), fill: FUNNEL_COLORS[1] },
     { name: "Button Click", value: getEventCount("button"), fill: FUNNEL_COLORS[2] },
     { name: "Waitlist", value: getEventCount("waiting list"), fill: FUNNEL_COLORS[3] },
   ];
@@ -194,16 +222,57 @@ const AdminAnalytics = () => {
 
       <main className="container mx-auto px-6 py-8 space-y-8">
         {/* Time Filter */}
-        <Tabs value={timeFilter} onValueChange={(v) => setTimeFilter(v as TimeFilter)}>
-          <TabsList>
-            <TabsTrigger value="daily" className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Today
-            </TabsTrigger>
-            <TabsTrigger value="7days">Last 7 Days</TabsTrigger>
-            <TabsTrigger value="30days">Last 30 Days</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex items-center gap-4">
+          <Tabs value={timeFilter} onValueChange={(v) => setTimeFilter(v as TimeFilter)}>
+            <TabsList>
+              <TabsTrigger value="daily" className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Today
+              </TabsTrigger>
+              <TabsTrigger value="7days">Last 7 Days</TabsTrigger>
+              <TabsTrigger value="30days">Last 30 Days</TabsTrigger>
+              <TabsTrigger value="custom">Custom</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          
+          {timeFilter === "custom" && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "justify-start text-left font-normal",
+                    !dateRange && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateRange?.from ? (
+                    dateRange.to ? (
+                      <>
+                        {format(dateRange.from, "MMM d, yyyy")} -{" "}
+                        {format(dateRange.to, "MMM d, yyyy")}
+                      </>
+                    ) : (
+                      format(dateRange.from, "MMM d, yyyy")
+                    )
+                  ) : (
+                    <span>Pick a date range</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  initialFocus
+                  mode="range"
+                  defaultMonth={dateRange?.from}
+                  selected={dateRange}
+                  onSelect={setDateRange}
+                  numberOfMonths={2}
+                />
+              </PopoverContent>
+            </Popover>
+          )}
+        </div>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -322,14 +391,17 @@ const AdminAnalytics = () => {
 
           {/* Funnel B: Conversion Flow */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingDown className="w-5 h-5" />
-                Conversion Funnel
-              </CardTitle>
-              <CardDescription>
-                DAU → Landing Page → Button Click → Waitlist
-              </CardDescription>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingDown className="w-5 h-5" />
+              Conversion Funnel
+              <span className="text-xs font-normal text-muted-foreground ml-2">
+                (Note: Page Views can exceed Unique Visitors with repeat visits)
+              </span>
+            </CardTitle>
+            <CardDescription>
+              Unique Visitors → Page Views → Button Click → Waitlist
+            </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-80">
