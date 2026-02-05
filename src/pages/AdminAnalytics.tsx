@@ -169,10 +169,10 @@ const AdminAnalytics = () => {
   ];
 
   // Funnel B: Conversion Flow
-  // Note: DAU counts unique visitors, while Landing Page counts total page views per day
-  // A returning user visiting on multiple days = 1 DAU but multiple landing page events
+  // Note: MAU counts unique visitors, while Page Views counts total page views
+  // A returning user visiting on multiple days = 1 MAU but multiple page view events
   const funnelBData = [
-    { name: "Unique Visitors", value: dauCount, fill: FUNNEL_COLORS[0] },
+    { name: "MAU", value: dauCount, fill: FUNNEL_COLORS[0] },
     { name: "Page Views", value: getEventCount("landing page"), fill: FUNNEL_COLORS[1] },
     { name: "Button Click", value: getEventCount("button"), fill: FUNNEL_COLORS[2] },
     { name: "Waitlist", value: getEventCount("waiting list"), fill: FUNNEL_COLORS[3] },
@@ -294,7 +294,7 @@ const AdminAnalytics = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Daily Active Users
+                Monthly Active Users
               </CardTitle>
               <Users className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
@@ -396,11 +396,11 @@ const AdminAnalytics = () => {
               <TrendingDown className="w-5 h-5" />
               Conversion Funnel
               <span className="text-xs font-normal text-muted-foreground ml-2">
-                (Note: Page Views can exceed Unique Visitors with repeat visits)
+                (Note: Page Views can exceed MAU with repeat visits)
               </span>
             </CardTitle>
             <CardDescription>
-              Unique Visitors → Page Views → Button Click → Waitlist
+              MAU → Page Views → Button Click → Waitlist
             </CardDescription>
             </CardHeader>
             <CardContent>
